@@ -646,8 +646,8 @@ In contrast,</p>
 </section>
 <section id="external-reference-instructions">
 <span id="index-5"></span><h2>External Reference Instructions<a class="headerlink" href="#external-reference-instructions" title="Permalink to this heading">¶</a></h2>
-<section id="xref-syntax-instructions-syntax-instr-extern-mathsf-extern-internalize">
-<span id="valid-extern-internalize"></span><h3><span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.internalize}}\)</span><a class="headerlink" href="#xref-syntax-instructions-syntax-instr-extern-mathsf-extern-internalize" title="Permalink to this heading">¶</a></h3>
+<section id="xref-syntax-instructions-syntax-instr-extern-mathsf-any-convert-extern">
+<span id="valid-any-convert-extern"></span><h3><span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{any.convert_extern}}\)</span><a class="headerlink" href="#xref-syntax-instructions-syntax-instr-extern-mathsf-any-convert-extern" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>The instruction is valid with type <span class="math notranslate nohighlight">\([(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{extern}})] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{any}})]\)</span> for any <span class="math notranslate nohighlight">\(\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?\)</span> that equals <span class="math notranslate nohighlight">\(\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?\)</span>.</p></li>
 </ul>
@@ -655,11 +655,11 @@ In contrast,</p>
 \[\frac{
   \href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^? = \href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?
 }{
-  C \href{../valid/instructions.html#valid-instr}{\vdash} \href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.internalize}} : [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{extern}})] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{any}})]
+  C \href{../valid/instructions.html#valid-instr}{\vdash} \href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{any.convert_extern}} : [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{extern}})] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{any}})]
 }\]</div>
 </section>
-<section id="xref-syntax-instructions-syntax-instr-extern-mathsf-extern-externalize">
-<span id="valid-extern-externalize"></span><h3><span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.externalize}}\)</span><a class="headerlink" href="#xref-syntax-instructions-syntax-instr-extern-mathsf-extern-externalize" title="Permalink to this heading">¶</a></h3>
+<section id="xref-syntax-instructions-syntax-instr-extern-mathsf-extern-convert-any">
+<span id="valid-extern-convert-any"></span><h3><span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.convert_any}}\)</span><a class="headerlink" href="#xref-syntax-instructions-syntax-instr-extern-mathsf-extern-convert-any" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>The instruction is valid with type <span class="math notranslate nohighlight">\([(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{any}})] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{extern}})]\)</span> for any <span class="math notranslate nohighlight">\(\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?\)</span> that equals <span class="math notranslate nohighlight">\(\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?\)</span>.</p></li>
 </ul>
@@ -667,7 +667,7 @@ In contrast,</p>
 \[\frac{
   \href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^? = \href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?
 }{
-  C \href{../valid/instructions.html#valid-instr}{\vdash} \href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.externalize}} : [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{any}})] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{extern}})]
+  C \href{../valid/instructions.html#valid-instr}{\vdash} \href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.convert_any}} : [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_1^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{any}})] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [(\href{../syntax/types.html#syntax-reftype}{\mathsf{ref}}~\href{../syntax/types.html#syntax-reftype}{\mathsf{null}}_2^?~\href{../syntax/types.html#syntax-heaptype}{\mathsf{extern}})]
 }\]</div>
 </section>
 </section>
@@ -1929,7 +1929,15 @@ The subsumption rule allows to weaken the type of <span class="math notranslate 
 <ul>
 <li><p>either of the form <span class="math notranslate nohighlight">\(t.\href{../syntax/instructions.html#syntax-instr-numeric}{\mathsf{const}}~c\)</span>,</p></li>
 <li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-ref}{\mathsf{ref.null}}\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-i31}{\mathsf{ref.i31}}\)</span>,</p></li>
 <li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-ref}{\mathsf{ref.func}}~x\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-struct}{\mathsf{struct.new}}~x\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-struct}{\mathsf{struct.new\_default}}~x\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-array}{\mathsf{array.new}}~x\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-array}{\mathsf{array.new\_default}}~x\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-array}{\mathsf{array.new\_fixed}}~x\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{any.convert_extern}}\)</span>,</p></li>
+<li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.convert_any}}\)</span>,</p></li>
 <li><p>or of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-variable}{\mathsf{global.get}}~x\)</span>, in which case <span class="math notranslate nohighlight">\(C.\href{../valid/conventions.html#context}{\mathsf{globals}}[x]\)</span> must be a <a class="reference internal" href="../syntax/types.html#syntax-globaltype"><span class="std std-ref">global type</span></a> of the form <span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-numeric}{\mathsf{const}}~t\)</span>.</p></li>
 </ul>
 </li>
@@ -1947,8 +1955,19 @@ The subsumption rule allows to weaken the type of <span class="math notranslate 
 }
 \qquad
 \frac{
+  C.\href{../valid/conventions.html#context}{\mathsf{globals}}[x] = \href{../syntax/instructions.html#syntax-instr-numeric}{\mathsf{const}}~t
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-variable}{\mathsf{global.get}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{
 }{
   C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-ref}{\mathsf{ref.null}}~t \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}
+\qquad
+\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-i31}{\mathsf{ref.i31}} \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
 }
 \qquad
 \frac{
@@ -1957,9 +1976,38 @@ The subsumption rule allows to weaken the type of <span class="math notranslate 
 }\]</div>
 <div class="math notranslate nohighlight">
 \[\frac{
-  C.\href{../valid/conventions.html#context}{\mathsf{globals}}[x] = \href{../syntax/instructions.html#syntax-instr-numeric}{\mathsf{const}}~t
 }{
-  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-variable}{\mathsf{global.get}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-struct}{\mathsf{struct.new}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}
+\qquad
+\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-struct}{\mathsf{struct.new\_default}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-array}{\mathsf{array.new}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}
+\qquad
+\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-array}{\mathsf{array.new\_default}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}
+\qquad
+\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-array}{\mathsf{array.new\_fixed}}~x \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{any.convert_extern}} \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
+}
+\qquad
+\frac{
+}{
+  C \href{../valid/instructions.html#valid-constant}{\vdash} \href{../syntax/instructions.html#syntax-instr-extern}{\mathsf{extern.convert_any}} \href{../valid/instructions.html#valid-constant}{\mathrel{\mbox{const}}}
 }\]</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
