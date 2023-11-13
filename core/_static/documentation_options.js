@@ -1,6 +1,6 @@
 var DOCUMENTATION_OPTIONS = {
     URL_ROOT: document.getElementById("documentation_options").getAttribute('data-url_root'),
-    VERSION: '2.0 + function-references + gc + tail-calls + continuations (Draft 2023-10-20)',
+    VERSION: '2.0 + function-references + gc + tail-calls + continuations (Draft 2023-11-13)',
     LANGUAGE: 'en',
     COLLAPSE_INDEX: false,
     BUILDER: 'html',
