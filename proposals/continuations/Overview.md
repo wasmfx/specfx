@@ -124,7 +124,7 @@ H^ea ::=
 
 * `S; F; v^n (ref.cont ca) (cont.bind $ct $ct')  -->  S'; F; (ref.const |S.conts|)`
   - iff `S.conts[ca] = (E' : n')`
-  - and `$ct' = cont $ft`
+  - and `$ct' = cont $ft'`
   - and `$ft' = [t1'*] -> [t2'*]`
   - and `n = n' - |t1'*|`
   - and `S' = S with conts[ca] = epsilon with conts += (E : |t1'*|)`
