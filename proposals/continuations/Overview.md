@@ -25,7 +25,7 @@ Based on [typed reference proposal](https://github.com/WebAssembly/function-refe
     - and `$ft = [t3* t1*] -> [t2*]`
     - and `$ct' = cont $ft'`
     - and `$ft' = [t1'*] -> [t2'*]`
-    - and `[t1'*] -> [t2'*] <: [t1*] -> [t2*]`
+    - and `[t1*] -> [t2*] <: [t1'*] -> [t2'*]`
 
 * `suspend <tagidx>` suspends the current continuation
   - `suspend $t : [t1*] -> [t2*]`
@@ -51,7 +51,8 @@ Based on [typed reference proposal](https://github.com/WebAssembly/function-refe
     - and `(label $l : [te1'* (ref null? $ct')])*`
     - and `([te1*] <: [te1'*])*`
     - and `($ct' = cont $ft')*`
-    - and `([te2*] -> [t2*] <: $ft')*`
+    - and `$ft' = [t1'*] -> [t2'*]`
+    - and `([te2*] -> [t2*] <: [t1'*] -> [t2'*])*`
 
 * `barrier <blocktype> <instr>* end` blocks suspension
   - `barrier $l bt instr* end : [t1*] -> [t2*]`
