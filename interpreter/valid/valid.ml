@@ -184,7 +184,7 @@ let check_func_type (c : context) (ft : func_type) at =
 let check_cont_type (c : context) (ct : cont_type) at =
   match ct with
   | ContT (VarHT (StatX x)) ->
-     let _dt = func_type c (x @@ at) in ()
+    let _dt = func_type c (x @@ at) in ()
   | _ -> assert false
 
 let check_table_type (c : context) (tt : table_type) at =
