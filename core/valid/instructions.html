@@ -286,6 +286,10 @@ In contrast,</p>
 }{
   C \href{../valid/instructions.html#valid-instr}{\vdash} \href{../syntax/instructions.html#syntax-instr-ref}{\mathsf{ref.test}}~\mathit{rt} : [\mathit{rt}'] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [\href{../syntax/types.html#syntax-valtype}{\mathsf{i32}}]
 }\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The liberty to pick a supertype <span class="math notranslate nohighlight">\(\mathit{rt}'\)</span> allows typing the instruction with the least precise super type of <span class="math notranslate nohighlight">\(\mathit{rt}\)</span> as input, that is, the top type in the corresponding heap subtyping hierarchy.</p>
+</div>
 </section>
 <section id="xref-syntax-instructions-syntax-instr-ref-mathsf-ref-cast-mathit-rt">
 <span id="valid-ref-cast"></span><h3><span class="math notranslate nohighlight">\(\href{../syntax/instructions.html#syntax-instr-ref}{\mathsf{ref.cast}}~\mathit{rt}\)</span><a class="headerlink" href="#xref-syntax-instructions-syntax-instr-ref-mathsf-ref-cast-mathit-rt" title="Permalink to this heading">¶</a></h3>
@@ -303,6 +307,10 @@ In contrast,</p>
 }{
   C \href{../valid/instructions.html#valid-instr}{\vdash} \href{../syntax/instructions.html#syntax-instr-ref}{\mathsf{ref.cast}}~\mathit{rt} : [\mathit{rt}'] \mathrel{\href{../syntax/types.html#syntax-instrtype}{\rightarrow}} [\mathit{rt}]
 }\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The liberty to pick a supertype <span class="math notranslate nohighlight">\(\mathit{rt}'\)</span> allows typing the instruction with the least precise super type of <span class="math notranslate nohighlight">\(\mathit{rt}\)</span> as input, that is, the top type in the corresponding heap subtyping hierarchy.</p>
+</div>
 </section>
 </section>
 <section id="aggregate-reference-instructions">
