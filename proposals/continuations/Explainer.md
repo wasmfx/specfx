@@ -15,7 +15,7 @@ single new reference type for *continuations*.
 3. [Instruction set](#instruction-set)
    1. [Declaring control tags](#declaring-control-tags)
    2. [Creating continuations](#creating-continuations)
-   3. [Resuming continuations](#resuming-continuations)
+   3. [Invoking continuations](#invoking-continuations)
    4. [Suspending continuations](#suspending-continuations)
    5. [Binding continuations](#binding-continuations)
    6. [Trapping continuations](#trapping-continuations)
@@ -216,16 +216,17 @@ a *handler*, which handles subsequent control suspensions within the
 continuation.
 
 ```wasm
-  resume (tag $e $l)* : [tp* (ref $ct)] -> [tr*]
+  resume $ct (tag $e $l)* : [tp* (ref $ct)] -> [tr*]
   where:
   - $ct = cont [tp*] -> [tr*]
 ```
 
-The `resume` instruction is parameterised by a handler defined by a
-collection of pairs of control tags and labels. Each pair maps a
-control tag to a label pointing to its corresponding handler code. The
-`resume` instruction consumes its continuation argument, meaning a
-continuation may be resumed only once.
+The `resume` instruction is parameterised by a continuation type and a
+handler dispatch table defined by a collection of pairs of control
+tags and labels. Each pair maps a control tag to a label pointing to
+its corresponding handler code. The `resume` instruction consumes its
+continuation argument, meaning a continuation may be resumed only
+once.
 
 The second way to invoke a continuation is to raise an exception at
 the control tag invocation site. This amounts to performing "an
@@ -233,20 +234,21 @@ abortive action" which causes the stack to be unwound.
 
 
 ```wasm
-  resume_throw $exn : [tp* (ref $ct)])] -> [tr*]
+  resume_throw $ct $exn (tag $e $l)* : [tp* (ref $ct)])] -> [tr*]
   where:
   - $ct = cont [ta*] -> [tr*]
   - $exn : [tp*] -> []
 ```
 
-The instruction `resume_throw` is parameterised by the exception to be
-raised at the control tag invocation site. As with `resume`, this
-instruction also fully consumes its continuation
-argument. Operationally, this instruction raises the exception `$exn`
-with parameters of type `tp*` at the control tag invocation point in
-the context of the supplied continuation. As an exception is being
-raised (the continuation is not actually being supplied a value) the
-parameter types for the continuation `ta*` are unconstrained.
+The instruction `resume_throw` is parameterised by a continuation
+type, the exception to be raised at the control tag invocation site,
+and a handler dispatch table. As with `resume`, this instruction also
+fully consumes its continuation argument. Operationally, this
+instruction raises the exception `$exn` with parameters of type `tp*`
+at the control tag invocation point in the context of the supplied
+continuation. As an exception is being raised (the continuation is not
+actually being supplied a value) the parameter types for the
+continuation `ta*` are unconstrained.
 
 ### Suspending continuations
 
@@ -283,7 +285,7 @@ provides several example usages of `cont.bind`).
 
 
 ```wasm
-  cont.bind $ct2 : [tp1* (ref $ct1)] -> [(ref $ct2)]
+  cont.bind $ct1 $ct2 : [tp1* (ref $ct1)] -> [(ref $ct2)]
   where:
   $ct1 = cont [tp1* tp2*] -> [tr*]
   $ct2 = cont [tp2*] -> [tr*]
@@ -421,8 +423,8 @@ We now define a scheduler.
     (loop $l
       (if (call $queue-empty) (then (return)))
       (block $on_yield (result (ref $cont))
-        (resume (tag $yield $on_yield)
-                (call $dequeue)
+        (resume $cont (tag $yield $on_yield)
+                      (call $dequeue)
         )
         (br $l)  ;; thread terminated
       ) ;;   $on_yield (result (ref $cont))
@@ -469,9 +471,9 @@ corresponding continuation reference.
   (elem declare func $thread1 $thread2 $thread3)
 
   (func (export "run")
-    (call $enqueue (cont.new (type $cont) (ref.func $thread1)))
-    (call $enqueue (cont.new (type $cont) (ref.func $thread2)))
-    (call $enqueue (cont.new (type $cont) (ref.func $thread3)))
+    (call $enqueue (cont.new $cont (ref.func $thread1)))
+    (call $enqueue (cont.new $cont (ref.func $thread2)))
+    (call $enqueue (cont.new $cont (ref.func $thread3)))
 
     (call $log (i32.const -1))
     (call $scheduler)
@@ -534,11 +536,11 @@ example to fork each of the three threads from a single main thread.
 
   (func $main (export "main")
     (call $log (i32.const 0))
-    (suspend $fork (cont.new (type $cont) (ref.func $thread1)))
+    (suspend $fork (cont.new $cont (ref.func $thread1)))
     (call $log (i32.const 1))
-    (suspend $fork (cont.new (type $cont) (ref.func $thread2)))
+    (suspend $fork (cont.new $cont (ref.func $thread2)))
     (call $log (i32.const 2))
-    (suspend $fork (cont.new (type $cont) (ref.func $thread3)))
+    (suspend $fork (cont.new $cont (ref.func $thread3)))
     (call $log (i32.const 3))
   )
 
@@ -596,9 +598,9 @@ thread to completion without actually yielding.
       (if (ref.is_null (local.get $nextk)) (then (return)))
       (block $on_yield (result (ref $cont))
         (block $on_fork (result (ref $cont) (ref $cont))
-          (resume (tag $yield $on_yield)
-                  (tag $fork $on_fork)
-                  (local.get $nextk)
+          (resume $cont (tag $yield $on_yield)
+                        (tag $fork $on_fork)
+                        (local.get $nextk)
           )
           (local.set $nextk (call $dequeue))
           (br $l)  ;; thread terminated
@@ -671,9 +673,9 @@ schedulers.
       (if (ref.is_null (local.get $nextk)) (then (return)))
       (block $on_yield (result (ref $cont))
         (block $on_fork (result (ref $cont) (ref $cont))
-          (resume (tag $yield $on_yield)
-                  (tag $fork $on_fork)
-                  (local.get $nextk)
+          (resume $cont (tag $yield $on_yield)
+                        (tag $fork $on_fork)
+                        (local.get $nextk)
           )
           (local.set $nextk (call $dequeue))
           (br $l)  ;; thread terminated
@@ -695,9 +697,9 @@ schedulers.
       (if (ref.is_null (local.get $nextk)) (then (return)))
       (block $on_yield (result (ref $cont))
         (block $on_fork (result (ref $cont) (ref $cont))
-          (resume (tag $yield $on_yield)
-                  (tag $fork $on_fork)
-                  (local.get $nextk)
+          (resume $cont (tag $yield $on_yield)
+                        (tag $fork $on_fork)
+                        (local.get $nextk)
           )
           (local.set $nextk (call $dequeue))
           (br $l)  ;; thread terminated
@@ -719,9 +721,9 @@ schedulers.
       (if (ref.is_null (local.get $nextk)) (then (return)))
       (block $on_yield (result (ref $cont))
         (block $on_fork (result (ref $cont) (ref $cont))
-          (resume (tag $yield $on_yield)
-                  (tag $fork $on_fork)
-                  (local.get $nextk)
+          (resume $cont (tag $yield $on_yield)
+                        (tag $fork $on_fork)
+                        (local.get $nextk)
           )
           (local.set $nextk (call $dequeue))
           (br $l)  ;; thread terminated
@@ -744,9 +746,9 @@ schedulers.
       (if (ref.is_null (local.get $nextk)) (then (return)))
       (block $on_yield (result (ref $cont))
         (block $on_fork (result (ref $cont) (ref $cont))
-          (resume (tag $yield $on_yield)
-                  (tag $fork $on_fork)
-                  (local.get $nextk)
+          (resume $cont (tag $yield $on_yield)
+                        (tag $fork $on_fork)
+                        (local.get $nextk)
           )
           (local.set $nextk (call $dequeue))
           (br $l)  ;; thread terminated
@@ -772,7 +774,7 @@ current and newly forked threads.
 
 We run our example using each of the five schedulers.
 
-```wasm
+```wast
 (module
   (type $func (func))
   (type $cont (cont $func))
@@ -791,15 +793,15 @@ We run our example using each of the five schedulers.
 
   (func (export "run")
     (call $log (i32.const -1))
-    (call $scheduler1 (cont.new (type $cont) (ref.func $main)))
+    (call $scheduler1 (cont.new $cont (ref.func $main)))
     (call $log (i32.const -2))
-    (call $scheduler2 (cont.new (type $cont) (ref.func $main)))
+    (call $scheduler2 (cont.new $cont (ref.func $main)))
     (call $log (i32.const -3))
-    (call $scheduler3 (cont.new (type $cont) (ref.func $main)))
+    (call $scheduler3 (cont.new $cont (ref.func $main)))
     (call $log (i32.const -4))
-    (call $scheduler4 (cont.new (type $cont) (ref.func $main)))
+    (call $scheduler4 (cont.new $cont (ref.func $main)))
     (call $log (i32.const -5))
-    (call $scheduler5 (cont.new (type $cont) (ref.func $main)))
+    (call $scheduler5 (cont.new $cont (ref.func $main)))
     (call $log (i32.const -6))
   )
 )
@@ -931,8 +933,8 @@ First we implement control/prompt.
   (tag $control (export "control") (param (ref $cont-func)))    ;; control : [([contref ([] -> [])] -> [])] -> []
   (func $prompt (export "prompt") (param $nextk (ref null $cont)) ;; prompt : [(contref ([] -> []))] -> []
     (block $on_control (result (ref $cont-func) (ref $cont))
-       (resume (tag $control $on_control)
-               (local.get $nextk))
+       (resume $cont (tag $control $on_control)
+                     (local.get $nextk))
        (return)
     ) ;;   $on_control (param (ref $cont-func) (ref $cont))
     (let (local $h (ref $cont-func)) (local $k (ref $cont))
@@ -982,18 +984,18 @@ forking as `$yield` and `$fork` functions.
   (func $main (export "main") (param $yield (ref $func)) (param $fork (ref $cont-func))
     (call $log (i32.const 0))
     (call_ref
-      (cont.bind (type $cont) (local.get $yield) (local.get $fork)
-        (cont.new (type $func-cont-func-cont) (ref.func $thread1)))
+      (cont.bind $func-cont-func-cont $cont (local.get $yield) (local.get $fork)
+        (cont.new $func-cont-func-cont (ref.func $thread1)))
       (local.get $fork))
     (call $log (i32.const 1))
     (call_ref
-      (cont.bind (type $cont) (local.get $yield) (local.get $fork)
-        (cont.new (type $func-cont-func-cont) (ref.func $thread2)))
+      (cont.bind $func-cont-func-cont $cont (local.get $yield) (local.get $fork)
+        (cont.new $func-cont-func-cont (ref.func $thread2)))
       (local.get $fork))
     (call $log (i32.const 2))
     (call_ref
-      (cont.bind (type $cont) (local.get $yield) (local.get $fork)
-        (cont.new (type $func-cont-func-cont) (ref.func $thread3)))
+      (cont.bind $func-cont-func-cont $cont (local.get $yield) (local.get $fork)
+        (cont.new $func-cont-func-cont (ref.func $thread3)))
       (local.get $fork))
     (call $log (i32.const 3))
   )
@@ -1034,7 +1036,7 @@ We now define a scheduler module analogous to that of the previous
 dynamic lightweight thread example. As before, we will implement five
 different schedulers.
 
-```wasm
+```wast
 (module
   (type $func (func))       ;; [] -> []
   (type $cont (cont $func)) ;; cont ([] -> [])
@@ -1067,7 +1069,7 @@ Unlike before, with control/prompt a generic scheduler loop must be
 decoupled from the implementations of each operation (yield / fork) as
 the latter are passed in as arguments to user code
 
-```wasm
+```wast
   ;; generic boilerplate scheduler
   (func $scheduler (param $nextk (ref null $cont))
     (loop $loop
@@ -1105,7 +1107,7 @@ First, we do the baseline synchronous scheduler.
   )
   (func $sync (export "sync") (param $k (ref $func-cont-func-cont))
     (call $scheduler
-      (cont.bind (type $cont) (ref.func $yield) (ref.func $fork-sync) (local.get $k)))
+      (cont.bind $func-cont-func-cont $cont (ref.func $yield) (ref.func $fork-sync) (local.get $k)))
   )
 ```
 
@@ -1119,7 +1121,7 @@ All of the asynchronous schedulers make use of the same implementation
 of yield, which enqueues the continuation of the current thread and
 dequeues the next available thread.
 
-```wasm
+```wast
   ;; asynchronous yield (used by all asynchronous schedulers)
   (func $handle-yield (param $k (ref $cont))
     (call $enqueue (local.get $k))
@@ -1132,7 +1134,7 @@ dequeues the next available thread.
 
 Each asynchronous scheduler uses its own implementation of fork.
 
-```wasm
+```wast
   ;; four asynchronous implementations of fork:
   ;;   * kt and tk don't yield on encountering a fork
   ;;     1) kt runs the continuation, queuing up the new thread for later
@@ -1151,7 +1153,7 @@ Each asynchronous scheduler uses its own implementation of fork.
   )
   (func $kt (export "kt") (param $k (ref $func-cont-func-cont))
     (call $scheduler
-      (cont.bind (type $cont) (ref.func $yield) (ref.func $fork-kt) (local.get $k)))
+      (cont.bind $func-cont-func-cont $cont (ref.func $yield) (ref.func $fork-kt) (local.get $k)))
   )
 
   ;; no yield on fork, new thread first
@@ -1164,7 +1166,7 @@ Each asynchronous scheduler uses its own implementation of fork.
   )
   (func $tk (export "tk") (param $k (ref $func-cont-func-cont))
     (call $scheduler
-      (cont.bind (type $cont) (ref.func $yield) (ref.func $fork-tk) (local.get $k)))
+      (cont.bind $func-cont-func-cont $cont (ref.func $yield) (ref.func $fork-tk) (local.get $k)))
   )
 
   ;; yield on fork, continuation first
@@ -1178,7 +1180,7 @@ Each asynchronous scheduler uses its own implementation of fork.
   )
   (func $ykt (export "ykt") (param $k (ref $func-cont-func-cont))
     (call $scheduler
-      (cont.bind (type $cont) (ref.func $yield) (ref.func $fork-ykt) (local.get $k)))
+      (cont.bind $func-cont-func-cont $cont (ref.func $yield) (ref.func $fork-ykt) (local.get $k)))
   )
 
   ;; yield on fork, new thread first
@@ -1192,7 +1194,7 @@ Each asynchronous scheduler uses its own implementation of fork.
   )
   (func $ytk (export "ytk") (param $k (ref $func-cont-func-cont))
     (call $scheduler
-      (cont.bind (type $cont) (ref.func $yield) (ref.func $fork-ytk) (local.get $k)))
+      (cont.bind $func-cont-func-cont $cont (ref.func $yield) (ref.func $fork-ytk) (local.get $k)))
   )
 )
 (register "scheduler")
@@ -1228,15 +1230,15 @@ implementations of forking and yielding.
 
   (func $run (export "run")
     (call $log (i32.const -1))
-    (call $scheduler-sync (cont.new (type $func-cont-func-cont) (ref.func $main)))
+    (call $scheduler-sync (cont.new $func-cont-func-cont (ref.func $main)))
     (call $log (i32.const -2))
-    (call $scheduler-kt (cont.new (type $func-cont-func-cont) (ref.func $main)))
+    (call $scheduler-kt (cont.new $func-cont-func-cont (ref.func $main)))
     (call $log (i32.const -3))
-    (call $scheduler-tk (cont.new (type $func-cont-func-cont) (ref.func $main)))
+    (call $scheduler-tk (cont.new $func-cont-func-cont (ref.func $main)))
     (call $log (i32.const -4))
-    (call $scheduler-ykt (cont.new (type $func-cont-func-cont) (ref.func $main)))
+    (call $scheduler-ykt (cont.new $func-cont-func-cont (ref.func $main)))
     (call $log (i32.const -5))
-    (call $scheduler-ytk (cont.new (type $func-cont-func-cont) (ref.func $main)))
+    (call $scheduler-ytk (cont.new $func-cont-func-cont (ref.func $main)))
     (call $log (i32.const -6))
   )
 )
@@ -1436,8 +1438,8 @@ We can accommodate named handlers by introducing a new reference type
 executing a variant of the `resume` instruction and is passed to the
 continuation:
 
-```wasm
-  resume_with (tag $e $l)* : [ t1* (ref $ht) ] -> [ t2* ]
+```wast
+  resume_with $ht $ct (tag $e $l)* : [ t1* (ref $ht) (ref $ct) ] -> [ t2* ]
   where:
   - $ht = handler t2*
   - $ct = cont ([ (ref $ht) t1* ] -> [ t2* ])
@@ -1451,8 +1453,8 @@ construction.
 This instruction is complemented by an instruction for suspending to a
 specific handler:
 
-```wasm
-  suspend_to $e : [ s* (ref $ht) ] -> [ t* ]
+```wast
+  suspend_to $ht $e : [ s* (ref $ht) ] -> [ t* ]
   where:
   - $ht = handler tr*
   - $e : [ s* ] -> [ t* ]
@@ -1478,7 +1480,7 @@ symmetric `switch_to` primitive.
 Given named handlers, it is possible to introduce a somewhat magic
 instruction for switching directly to another continuation:
 
-```wasm
+```wast
   switch_to : [ t1* (ref $ct1) (ref $ht) ] -> [ t2* ]
   where:
   - $ht = handler t3*
@@ -1488,7 +1490,7 @@ instruction for switching directly to another continuation:
 
 This behaves as if there was a built-in tag
 
-```wasm
+```wast
   (tag $Switch (param t1* (ref $ct1)) (result t3*))
 ```
 
@@ -1510,7 +1512,7 @@ In fact, symmetric switching need not necessarily be tied to named
 handlers, since there could also be an indirect version with dynamic
 handler lookup:
 
-```wasm
+```wast
   switch : [ t1* (ref $ct1) ] -> [ t2* ]
   where:
   - $ct1 = cont ([ (ref $ct2) t1* ] -> [ t3* ])
