@@ -158,7 +158,7 @@ stacks, but other implementations are also possible.
 
 The proposal adds a new reference type for continuations.
 
-```wasm
+```wast
   (cont $t)
 ```
 
@@ -168,7 +168,7 @@ continuation, and whose return types `tr*` describes the stack
 shape after the continuation has run to completion.
 
 As a shorthand, we will often write the function type inline and write a continuation type as
-```wasm
+```wast
   (cont [tp*] -> [tr*])
 ```
 
@@ -179,7 +179,7 @@ A control tag is similar to an exception extended with a result type
 *resumable* exception. A tag declaration provides the type signature
 of a control tag.
 
-```wasm
+```wast
   (tag $e (param tp*) (result tr*))
 ```
 
@@ -195,7 +195,7 @@ for indicating that such a declaration is in scope.
 The following instruction creates a continuation in *suspended state*
 from a function.
 
-```wasm
+```wast
   cont.new $ct : [(ref $ft)] -> [(ref $ct)]
   where:
   - $ft = func [t1*] -> [t2*]
@@ -215,7 +215,7 @@ The first way to invoke a continuation resumes the continuation under
 a *handler*, which handles subsequent control suspensions within the
 continuation.
 
-```wasm
+```wast
   resume $ct (tag $e $l)* : [tp* (ref $ct)] -> [tr*]
   where:
   - $ct = cont [tp*] -> [tr*]
@@ -233,7 +233,7 @@ the control tag invocation site. This amounts to performing "an
 abortive action" which causes the stack to be unwound.
 
 
-```wasm
+```wast
   resume_throw $ct $exn (tag $e $l)* : [tp* (ref $ct)])] -> [tr*]
   where:
   - $ct = cont [ta*] -> [tr*]
@@ -256,7 +256,7 @@ A computation running inside a continuation can suspend itself by
 invoking one of the declared control tags.
 
 
-```wasm
+```wast
   suspend $e : [tp*] -> [tr*]
   where:
   - $e : [tp*] -> [tr*]
@@ -284,7 +284,7 @@ continuation with compatible type (the [Examples](#examples) section
 provides several example usages of `cont.bind`).
 
 
-```wasm
+```wast
   cont.bind $ct1 $ct2 : [tp1* (ref $ct1)] -> [(ref $ct2)]
   where:
   $ct1 = cont [tp1* tp2*] -> [tr*]
@@ -304,7 +304,7 @@ certain abstraction or language boundaries, we provide an instruction
 for explicitly trapping attempts at reifying stacks across a certain
 point.
 
-```wasm
+```wast
   barrier $l bt instr* end : [t1*] -> [t2*]
   where:
   - bt = [t1*] -> [t2*]
@@ -355,7 +355,7 @@ continuations. In their most basic *static* form we assume a fixed
 collection of cooperative threads with a single tag that allows a
 thread to signal that it is willing to yield.
 
-```wasm
+```wast
 (module $lwt
   (tag $yield (export "yield"))
 )
@@ -365,7 +365,7 @@ thread to signal that it is willing to yield.
 The `$yield` tag takes no parameter and has no result. Having
 declared it, we can now write some cooperative threads as functions.
 
-```wasm
+```wast
 (module $example
   (tag $yield (import "lwt" "yield"))
   (func $log (import "spectest" "print_i32") (param i32))
@@ -407,7 +407,7 @@ tag, because we have not yet specified how to handle it.
 
 We now define a scheduler.
 
-```wasm
+```wast
 (module $scheduler
   (type $func (func))
   (type $cont (cont $func))
@@ -454,7 +454,7 @@ new continuation for each, enqueue the continuations, and invoke the
 scheduler. The `cont.new` operation turns a function reference into a
 corresponding continuation reference.
 
-```wasm
+```wast
 (module
   (type $func (func))
   (type $cont (cont $func))
@@ -507,7 +507,7 @@ The threads are interleaved as expected.
 We can make our lightweight threads functionality considerably more
 expressive by allowing new threads to be forked dynamically.
 
-```wasm
+```wast
 (module $lwt
   (type $func (func))
   (type $cont (cont $func))
@@ -522,7 +522,7 @@ We declare a new `$fork` tag that takes a continuation as a
 parameter and (like `$yield`) returns no result. Now we modify our
 example to fork each of the three threads from a single main thread.
 
-```wasm
+```wast
 (module $example
   (type $func (func))
   (type $cont (cont $func))
@@ -572,7 +572,7 @@ example to fork each of the three threads from a single main thread.
 ```
 
 As with the static example we define a scheduler module.
-```wasm
+```wast
 (module $scheduler
   (type $func (func))
   (type $cont (cont $func))
@@ -592,7 +592,7 @@ In this example we illustrate five different schedulers. First, we
 write a baseline synchronous scheduler which simply runs the current
 thread to completion without actually yielding.
 
-```wasm
+```wast
   (func $sync (export "sync") (param $nextk (ref null $cont))
     (loop $l
       (if (ref.is_null (local.get $nextk)) (then (return)))
@@ -658,7 +658,7 @@ threads in sequence.
 Following a similar pattern, we define four different asynchronous
 schedulers.
 
-```wasm
+```wast
   ;; four asynchronous schedulers:
   ;;   * kt and tk don't yield on encountering a fork
   ;;     1) kt runs the continuation, queuing up the new thread for later
@@ -903,7 +903,7 @@ delimited control operators.
 
 First we implement control/prompt.
 
-```wasm
+```wast
 ;; interface to control/prompt
 (module $control
   (type $func (func))       ;; [] -> []
@@ -966,7 +966,7 @@ handlers for defining different schedulers. Here instead we
 parameterise the whole example by the behaviour of yielding and
 forking as `$yield` and `$fork` functions.
 
-```wasm
+```wast
 (module $example
   (type $func (func))       ;; [] -> []
   (type $cont (cont $func)) ;; cont ([] -> [])
@@ -1090,7 +1090,7 @@ fork.
 
 First, we do the baseline synchronous scheduler.
 
-```wasm
+```wast
   ;; synchronous scheduler
   (func $handle-yield-sync (param $k (ref $cont))
     (call $scheduler (local.get $k))
@@ -1205,7 +1205,7 @@ lightweight threads example, but the types are more complex due to the
 need to index the handled computation (`$main` in this case) by the
 implementations of forking and yielding.
 
-```wasm
+```wast
 (module
   (type $func (func))       ;; [] -> []
   (type $cont (cont $func)) ;; cont ([] -> [])
