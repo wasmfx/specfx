@@ -43,7 +43,7 @@ Based on [typed reference proposal](https://github.com/WebAssembly/function-refe
     - and `([te2*] -> [t2*] <: [t1'*] -> [t2'*])*`
 
 * `resume_throw <typeidx> <tagidx> (on <tagidx> <labelidx>)*` aborts a continuation
-  - `resume_throw $ct $e (on $t $l): [te* (ref null? $ct)] -> [t2*]`
+  - `resume_throw $ct $e (on $t $l)* : [te* (ref null? $ct)] -> [t2*]`
     - iff `(tag $e : [te*] -> [])`
     - and `$ct = cont $ft`
     - and `$ft = [t1*] -> [t2*]`
