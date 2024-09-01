@@ -388,10 +388,10 @@ let rec step (c : config) : config =
       | SuspendTo (x, y), vs ->
         let tagt = tag c.frame.inst y in
         let FuncT (ts, _) = func_type_of_tag_type c.frame.inst (Tag.type_of tagt) in
-        let args, vs' = i32_split (Lib.List32.length ts) vs e.at in
+        let args, vs' = i32_split (Int32.add (Lib.List32.length ts) 1l) vs e.at in
         let args, href =
-          match Lib.List.lead args, Lib.List.last args with
-          | args, Ref r -> args, r
+          match args with
+          | Ref r :: rest -> rest, r
           | _ -> Crash.error e.at "type mismatch at suspend to"
         in
         vs', [Suspending (tagt, args, None, Some href, fun code -> code) @@ e.at]
@@ -430,8 +430,7 @@ let rec step (c : config) : config =
 
       | ResumeWith (x, xls), Ref (ContRef ({contents = Some (n, ctxt)} as cont)) :: vs ->
         let hs = handle_table c xls in
-        Printf.printf "arity: %s\n%!" (I32.to_string_u n);
-        let args, vs' = i32_split (I32.sub n 1l) vs e.at in
+        let args, vs' = i32_split (Int32.sub n 1l) vs e.at in
         let exception Name in
         let name =
           Ref (HandlerRef (ref (Some Name)))

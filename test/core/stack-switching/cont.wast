@@ -1121,6 +1121,7 @@
 
   (func $sumUp (export "sumUp") (param $n i32) (result i32)
     (local $i i32)
+    (local $j i32)
     (local $k (ref $ct))
     (local.set $k (cont.new $ct (ref.func $nats)))
     (loop $next
@@ -1131,10 +1132,11 @@
       (local.set $k)
       (i32.add (local.get $i))
       (local.set $i)
-      (br_if $next (i32.le_u (local.get $i) (local.get $n)))
+      (local.set $j (i32.add (i32.const 1) (local.get $j)))
+      (br_if $next (i32.le_u (local.get $j) (local.get $n)))
    )
    (return (local.get $i)))
 
   (elem declare func $nats)
 )
-(assert_return (invoke "sumUp" (i32.const 10)))
+(assert_return (invoke "sumUp" (i32.const 10)) (i32.const 55))
