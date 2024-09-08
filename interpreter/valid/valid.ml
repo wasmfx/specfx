@@ -452,12 +452,12 @@ let check_memop (c : context) (memop : ('t, 's) memop) ty_size get_sz at =
  * declarative typing rules.
  *)
 
-let check_resume_table (c : context) hdlt ts2 (xys : (idx * hdl) list) at =
+let check_resume_table (c : context) hrt ts2 (xys : (idx * hdl) list) at =
   List.iter (fun (x1, x2) ->
       match x2 with
       | OnLabel x2 ->
         let FuncT (ts3, ts4) =
-          match hdlt with
+          match hrt with
           | Some rt ->
             let FuncT (ts3, ts4) = func_type_of_tag_type c (tag c x1) x1.at in
             FuncT (ts3, ts4 @ [RefT rt])
