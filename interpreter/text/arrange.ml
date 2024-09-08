@@ -101,12 +101,16 @@ let func_type (FuncT (ts1, ts2)) =
 let cont_type (ContT ct) =
   Node ("cont", [atom heap_type ct])
 
+let handler_type (HandlerT ts) =
+  Node ("handler", decls "result" ts)
+
 let str_type st =
   match st with
   | DefStructT st -> struct_type st
   | DefArrayT at -> array_type at
   | DefFuncT ft -> func_type ft
   | DefContT ct -> cont_type ct
+  | DefHandlerT ht -> handler_type ht
 
 let sub_type = function
   | SubT (Final, [], st) -> str_type st
@@ -534,10 +538,13 @@ let rec instr e =
     | ContNew x -> "cont.new " ^ var x, []
     | ContBind (x, y) -> "cont.bind " ^ var x ^ " " ^ var y, []
     | Suspend x -> "suspend " ^ var x, []
+    | SuspendTo (x, y) -> "suspend_to " ^ var x ^ " " ^ var y, []
     | Resume (x, xys) ->
       "resume " ^ var x, resumetable xys
     | ResumeThrow (x, y, xys) ->
       "resume_throw " ^ var x ^ " " ^ var y, resumetable xys
+    | ResumeWith (x, xys) ->
+      "resume_with " ^ var x, resumetable xys
     | Switch (x, z) ->
       "switch " ^ var x ^ " " ^ var z, []
     | Barrier (bt, es) -> "barrier", block_type bt @ list instr es
