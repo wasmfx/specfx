@@ -14,7 +14,7 @@ let abs_of_str_type _c = function
   | DefStructT _ | DefArrayT _ -> StructHT
   | DefFuncT _ -> FuncHT
   | DefContT _ -> ContHT
-  | DefHandlerT _ -> failwith "TODO abstract heap type for handlers"
+  | DefHandlerT _ -> HandlerHT
 
 let rec top_of_str_type c st =
   top_of_heap_type c (abs_of_str_type c st)
