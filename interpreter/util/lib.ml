@@ -109,17 +109,16 @@ struct
 
   let index_of x = index_where ((=) x)
 
-  let rec pairwise f = function
-    | [] -> []
-    | x1::x2::xs -> f x1 x2 :: pairwise f xs
-    | _ -> failwith "pairwise"
+  let rec map3 f xs ys zs =
+    match xs, ys, zs with
+    | [], [], [] -> []
+    | x::xs', y::ys', z::zs' -> f x y z :: map3 f xs' ys' zs'
+    | _ -> raise (Invalid_argument "Lib.List.map3")
 
-  let rec map_filter f = function
+  let rec map_pairwise f = function
     | [] -> []
-    | x::xs ->
-      match f x with
-      | None -> map_filter f xs
-      | Some y -> y :: map_filter f xs
+    | x1::x2::xs -> f x1 x2 :: map_pairwise f xs
+    | _ -> failwith "pairwise"
 end
 
 module List32 =
