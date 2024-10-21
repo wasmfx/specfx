@@ -230,7 +230,6 @@ rule token = parse
       | "suspend" -> SUSPEND
       | "resume" -> RESUME
       | "resume_throw" -> RESUME_THROW
-      | "barrier" -> BARRIER
       | "switch" -> SWITCH
 
 
@@ -778,6 +777,8 @@ rule token = parse
       | "module" -> MODULE
       | "binary" -> BIN
       | "quote" -> QUOTE
+      | "definition" -> DEFINITION
+      | "instance" -> INSTANCE
 
       | "script" -> SCRIPT
       | "register" -> REGISTER

@@ -396,7 +396,7 @@ let check_memop (c : context) (memop : ('t, 's) memop) ty_size get_sz at =
       check_pack sz (ty_size memop.ty) at;
       Pack.packed_size sz
   in
-  require (1 lsl memop.align <= size) at
+  require (1 lsl memop.align >= 1 && 1 lsl memop.align <= size) at
     "alignment must not be larger than natural";
   memop.ty
 
@@ -659,11 +659,6 @@ let rec check_instr (c : context) (e : instr) (s : infer_result_type) : infer_in
      require (match_result_type c.types t ts22) y.at
        "type mismatch in continuation types";
      ts11 --> ts21, []
-
-  | Barrier (bt, es) ->
-    let InstrT (ts1, ts2, xs) as ft = check_block_type c bt e.at in
-    check_block {c with labels = ts2 :: c.labels} es ft e.at;
-    ts1 --> ts2, List.map (fun x -> x @@ e.at) xs
 
   | Throw x ->
     let FuncT (ts1, ts2) = func_type_of_tag_type c (tag c x) x.at in
