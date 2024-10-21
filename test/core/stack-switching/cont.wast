@@ -55,13 +55,13 @@
 
   (elem declare func $f3)
   (func $f3
-    (barrier (call $f4))
+    (call $f4)
   )
   (func $f4
     (suspend $e1)
   )
 
-  (func (export "barrier")
+  (func (export "uncaught-3")
     (block $h (result (ref $k1))
       (resume $k1 (on $e1 $h) (cont.new $k1 (ref.func $f3)))
       (unreachable)
@@ -125,8 +125,7 @@
 
 (assert_exception (invoke "uncaught-1"))
 (assert_exception (invoke "uncaught-2"))
-
-(assert_trap (invoke "barrier") "barrier")
+(assert_exception (invoke "uncaught-3"))
 
 (assert_trap (invoke "non-linear-1") "continuation already consumed")
 (assert_trap (invoke "non-linear-2") "continuation already consumed")
@@ -655,6 +654,13 @@
   )
 )
 
+(module
+    (type $f1 (sub (func (result anyref))))
+    (type $f2 (sub $f1 (func (result eqref))))
+    (type $c1 (sub (cont $f1)))
+    (type $c2 (sub $c1 (cont $f2)))
+)
+
 ;; Globals
 (module
   (type $ft (func))
@@ -708,6 +714,48 @@
   (elem declare func $f $g)
 )
 (assert_return (invoke "init") (i32.const 42))
+
+(module
+  (rec
+    (type $ft (func (param i32) (param (ref null $ct)) (result i32)))
+    (type $ct (cont $ft)))
+
+  (func $print-i32 (import "spectest" "print_i32") (param i32))
+
+  (tag $swap (result i32))
+
+  (func $init (export "init") (result i32)
+    (resume $ct (on $swap switch)
+      (i32.const 1)
+      (cont.new $ct (ref.func $g))
+      (cont.new $ct (ref.func $f))))
+  (func $f (type $ft)
+    (local $i i32)
+    (local $nextk (ref null $ct))
+    (local.set $i (local.get 0))
+    (local.set $nextk (local.get 1))
+    (call $print-i32 (local.get $i))
+    (switch $ct $swap (i32.add (i32.const 1) (local.get $i)) (local.get $nextk))
+    (local.set $nextk)
+    (local.set $i)
+    (call $print-i32 (local.get $i))
+    (switch $ct $swap (i32.add (i32.const 1) (local.get $i)) (local.get $nextk))
+    (unreachable))
+  (func $g (type $ft)
+    (local $i i32)
+    (local $nextk (ref null $ct))
+    (local.set $i (local.get 0))
+    (local.set $nextk (local.get 1))
+    (call $print-i32 (local.get $i))
+    (switch $ct $swap (i32.add (i32.const 1) (local.get $i)) (local.get $nextk))
+    (local.set $nextk)
+    (local.set $i)
+    (call $print-i32 (local.get $i))
+    (return (local.get $i)))
+  (elem declare func $f $g)
+)
+(assert_return (invoke "init") (i32.const 4))
+
 
 (assert_invalid
   (module
@@ -793,3 +841,88 @@
     (switch $ct $t (ref.null $ct))
     (unreachable))
 )
+
+(module $co2
+  (type $task (func (result i32))) ;; type alias task = [] -> []
+  (type $ct   (cont $task)) ;; type alias   ct = $task
+  (tag $pause (export "pause"))   ;; pause : [] -> []
+  (tag $cancel (export "cancel"))   ;; cancel : [] -> []
+  ;; run : [(ref $task) (ref $task)] -> []
+  ;; implements a 'seesaw' (c.f. Ganz et al. (ICFP@99))
+  (func $run (export "seesaw") (param $up (ref $ct)) (param $down (ref $ct)) (result i32)
+    (local $result i32)
+    ;; run $up
+    (loop $run_next (result i32)
+      (block $on_pause (result (ref $ct))
+        (resume $ct (on $pause $on_pause)
+                    (local.get $up))
+        ;; $up finished, store its result
+        (local.set $result)
+        ;; next cancel $down
+        (block $on_cancel
+          (try_table (catch $cancel $on_cancel)
+            ;; inject the cancel exception into $down
+            (resume_throw $ct $cancel (local.get $down))
+            (drop) ;; drop the return value if it handled $cancel
+                   ;; itself and returned normally...
+          )
+        ) ;; ... otherwise catch $cancel and return $up's result.
+        (return (local.get $result))
+      ) ;; on_pause clause, stack type: [(cont $ct)]
+      (local.set $up)
+      ;; swap $up and $down
+      (local.get $down)
+      (local.set $down (local.get $up))
+      (local.set $up)
+      (br $run_next)
+    )
+  )
+)
+(register "co2")
+
+(module $client
+  (type $task-0 (func (param i32) (result i32)))
+  (type $ct-0 (cont $task-0))
+  (type $task (func (result i32)))
+  (type $ct (cont $task))
+
+  (func $seesaw (import "co2" "seesaw") (param (ref $ct)) (param (ref $ct)) (result i32))
+  (func $print-i32 (import "spectest" "print_i32") (param i32))
+  (tag $pause (import "co2" "pause"))
+
+  (func $even (param $niter i32) (result i32)
+     (local $next i32) ;; zero initialised.
+     (local $i i32)
+     (loop $print-next
+       (call $print-i32 (local.get $next))
+       (suspend $pause)
+       (local.set $next (i32.add (local.get $next) (i32.const 2)))
+       (local.set $i (i32.add (local.get $i) (i32.const 1)))
+       (br_if $print-next (i32.lt_u (local.get $i) (local.get $niter)))
+     )
+     (local.get $next)
+  )
+  (func $odd (param $niter i32) (result i32)
+     (local $next i32) ;; zero initialised.
+     (local $i i32)
+     (local.set $next (i32.const 1))
+     (loop $print-next
+       (call $print-i32 (local.get $next))
+       (suspend $pause)
+       (local.set $next (i32.add (local.get $next) (i32.const 2)))
+       (local.set $i (i32.add (local.get $i) (i32.const 1)))
+       (br_if $print-next (i32.lt_u (local.get $i) (local.get $niter)))
+     )
+     (local.get $next)
+  )
+
+  (func (export "main") (result i32)
+    (call $seesaw
+       (cont.bind $ct-0 $ct
+         (i32.const 5) (cont.new $ct-0 (ref.func $even)))
+       (cont.bind $ct-0 $ct
+         (i32.const 5) (cont.new $ct-0 (ref.func $odd)))))
+
+  (elem declare func $even $odd)
+)
+(assert_return (invoke "main") (i32.const 10))

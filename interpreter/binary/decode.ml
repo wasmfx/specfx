@@ -326,7 +326,6 @@ let memop s =
   let has_var = Int32.logand flags 0x40l <> 0l in
   let x = if has_var then at var s else Source.(0l @@ no_region) in
   let align = Int32.(to_int (logand flags 0x3fl)) in
-  require (align < 32) s pos "malformed memop alignment";
   let offset = u32 s in
   x, align, offset
 
@@ -649,11 +648,6 @@ let rec instr s =
     let x = at var s in
     let y = at var s in
     switch x y
-  | 0xe6 ->
-    let bt = block_type s in
-    let es' = instr_block s in
-    end_ s;
-    barrier bt es'
 
   | 0xfb as b ->
     (match u32 s with
