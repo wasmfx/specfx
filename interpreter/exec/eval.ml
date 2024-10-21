@@ -58,6 +58,7 @@ type frame =
 }
 
 type code = value stack * admin_instr list
+and handler_name = exn
 
 and admin_instr = admin_instr' phrase
 and admin_instr' =
@@ -72,25 +73,28 @@ and admin_instr' =
   | Label of int * instr list * code
   | Frame of int * frame * code
   | Handler of int * catch list * code
-  | Handle of handle_table * code
-  | Suspending of tag_inst * value stack * ref_ option * ctxt
+  | Handle of handler_name option * handle_table option * code
+  | Suspending of tag_inst * value stack * ref_ option * ref_ option * ctxt
 
 and ctxt = code -> code
 and handle_table = (tag_inst * idx) list * tag_inst list
 
 type cont = int32 * ctxt  (* TODO: represent type properly *)
 type ref_ += ContRef of cont option ref
+type ref_ += HandlerRef of handler_name option ref
 
 let () =
   let type_of_ref' = !Value.type_of_ref' in
   Value.type_of_ref' := function
     | ContRef _ -> ContHT
+    | HandlerRef _ -> HandlerHT
     | r -> type_of_ref' r
 
 let () =
   let string_of_ref' = !Value.string_of_ref' in
   Value.string_of_ref' := function
     | ContRef _ -> "cont"
+    | HandlerRef _ -> "handler"
     | r -> string_of_ref' r
 
 let plain e = Plain e.it @@ e.at
@@ -377,7 +381,18 @@ let rec step (c : config) : config =
         let tagt = tag c.frame.inst x in
         let FuncT (ts, _) = func_type_of_tag_type c.frame.inst (Tag.type_of tagt) in
         let args, vs' = i32_split (Lib.List32.length ts) vs e.at in
-        vs', [Suspending (tagt, args, None, fun code -> code) @@ e.at]
+        vs', [Suspending (tagt, args, None, None, fun code -> code) @@ e.at]
+
+      | SuspendTo (x, y), vs ->
+        let tagt = tag c.frame.inst y in
+        let FuncT (ts, _) = func_type_of_tag_type c.frame.inst (Tag.type_of tagt) in
+        let args, vs' = i32_split (Int32.add (Lib.List32.length ts) 1l) vs e.at in
+        let args, href =
+          match args with
+          | Ref r :: rest -> rest, r
+          | _ -> Crash.error e.at "type mismatch at suspend to"
+        in
+        vs', [Suspending (tagt, args, None, Some href, fun code -> code) @@ e.at]
 
       | Resume (x, xls), Ref (NullRef _) :: vs ->
         vs, [Trapping "null continuation reference" @@ e.at]
@@ -389,7 +404,7 @@ let rec step (c : config) : config =
         let hs = handle_table c xls in
         let args, vs' = i32_split n vs e.at in
         cont := None;
-        vs', [Handle (hs, ctxt (args, [])) @@ e.at]
+        vs', [Handle (None, Some hs, ctxt (args, [])) @@ e.at]
 
       | ResumeThrow (x, y, xls), Ref (NullRef _) :: vs ->
         vs, [Trapping "null continuation reference" @@ e.at]
@@ -403,7 +418,23 @@ let rec step (c : config) : config =
         let hs = handle_table c xls in
         let args, vs' = i32_split (Lib.List32.length ts) vs e.at in
         cont := None;
-        vs', [Handle (hs, ctxt ([], [Throwing (tagt, args) @@ e.at])) @@ e.at]
+        vs', [Handle (None, Some hs, ctxt ([], [Throwing (tagt, args) @@ e.at])) @@ e.at]
+
+      | ResumeWith (x, xls), Ref (NullRef _) :: vs ->
+        vs, [Trapping "null continuation reference" @@ e.at]
+
+      | ResumeWith (x, xls), Ref (ContRef {contents = None}) :: vs ->
+        vs, [Trapping "continuation already consumed" @@ e.at]
+
+      | ResumeWith (x, xls), Ref (ContRef ({contents = Some (n, ctxt)} as cont)) :: vs ->
+        let hs = handle_table c xls in
+        let args, vs' = i32_split (Int32.sub n 1l) vs e.at in
+        let exception Name in
+        let name =
+          Ref (HandlerRef (ref (Some Name)))
+        in
+        cont := None;
+        vs', [Handle (Some Name, Some hs, ctxt (args @ [name], [])) @@ e.at]
 
       | Switch (x, y), Ref (NullRef _) :: vs ->
          vs, [Trapping "null continuation reference" @@ e.at]
@@ -414,7 +445,7 @@ let rec step (c : config) : config =
       | Switch (x, y), Ref (ContRef {contents = Some (n, ctxt)} as cont) :: vs ->
          let tagt = tag c.frame.inst y in
          let args, vs' = i32_split (Int32.sub n 1l) vs e.at in
-         vs', [Suspending (tagt, args, Some cont, fun code -> code) @@ e.at]
+         vs', [Suspending (tagt, args, Some cont, None, fun code -> code) @@ e.at]
 
       | ReturnCall x, vs ->
         (match (step {c with code = (vs, [Plain (Call x) @@ e.at])}).code with
@@ -1151,9 +1182,9 @@ let rec step (c : config) : config =
     | Label (n, es0, (vs', [])), vs ->
       vs' @ vs, []
 
-    | Label (n, es0, (vs', {it = Suspending (tagt, vs1, contref, ctxt); at} :: es')), vs ->
+    | Label (n, es0, (vs', {it = Suspending (tagt, vs1, contref, href, ctxt); at} :: es')), vs ->
       let ctxt' code = [], [Label (n, es0, compose (ctxt code) (vs', es')) @@ e.at] in
-      vs, [Suspending (tagt, vs1, contref, ctxt') @@ at]
+      vs, [Suspending (tagt, vs1, contref, href, ctxt') @@ at]
 
     | Label (n, es0, (vs', {it = ReturningInvoke (vs0, f); at} :: es')), vs ->
       vs, [ReturningInvoke (vs0, f) @@ at]
@@ -1180,9 +1211,9 @@ let rec step (c : config) : config =
     | Frame (n, frame', (vs', {it = Throwing (a, vs0); at} :: es')), vs ->
       vs, [Throwing (a, vs0) @@ at]
 
-    | Frame (n, frame', (vs', {it = Suspending (tagt, vs1, contref, ctxt); at} :: es')), vs ->
+    | Frame (n, frame', (vs', {it = Suspending (tagt, vs1, contref, href, ctxt); at} :: es')), vs ->
       let ctxt' code = [], [Frame (n, frame', compose (ctxt code) (vs', es')) @@ e.at] in
-      vs, [Suspending (tagt, vs1, contref, ctxt') @@ at]
+      vs, [Suspending (tagt, vs1, contref, href, ctxt') @@ at]
 
     | Frame (n, frame', (vs', {it = Returning vs0; at} :: es')), vs ->
       take n vs0 e.at @ vs, []
@@ -1222,9 +1253,9 @@ let rec step (c : config) : config =
     | Handler (n, [], (vs', {it = Throwing (a, vs0); at} :: es')), vs ->
       vs, [Throwing (a, vs0) @@ at]
 
-    | Handler (n, cs, (vs', {it = Suspending (tagt, vs1, contref, ctxt); at} :: es')), vs ->
+    | Handler (n, cs, (vs', {it = Suspending (tagt, vs1, contref, href, ctxt); at} :: es')), vs ->
       let ctxt' code = [], [Handler (n, cs, compose (ctxt code) (vs', es')) @@ e.at] in
-      vs, [Suspending (tagt, vs1, contref, ctxt') @@ at]
+      vs, [Suspending (tagt, vs1, contref, href, ctxt') @@ at]
 
     | Handler (n, cs, (vs', e' :: es')), vs when is_jumping e' ->
       vs, [e']
@@ -1256,37 +1287,45 @@ let rec step (c : config) : config =
         with Crash (_, msg) -> Crash.error e.at msg)
       )
 
-    | Handle (hso, (vs', [])), vs ->
+    | Handle (name, hso, (vs', [])), vs ->
       vs' @ vs, []
 
-    | Handle ((hs, _), (vs', {it = Suspending (tagt, vs1, None, ctxt); at} :: es')), vs
+    | Handle (name, Some (hs, _), (vs', {it = Suspending (tagt, vs1, None, None, ctxt); at} :: es')), vs
       when List.mem_assq tagt hs ->
       let FuncT (_, ts) = func_type_of_tag_type c.frame.inst (Tag.type_of tagt) in
       let ctxt' code = compose (ctxt code) (vs', es') in
       [Ref (ContRef (ref (Some (Lib.List32.length ts, ctxt'))))] @ vs1 @ vs,
       [Plain (Br (List.assq tagt hs)) @@ e.at]
 
-    | Handle ((_, hs) as hso, (vs', {it = Suspending (tagt, vs1, Some (ContRef ({contents = Some (_, ctxt)} as cont)), ctxt'); at} :: es')), vs
+    | Handle (Some h, Some (hs, _), (vs', {it = Suspending (tagt, vs1, None, Some (HandlerRef ({contents = Some h'} as href)), ctxt); at} :: es')), vs
+      when h == h' && List.mem_assq tagt hs ->
+      let FuncT (_, ts) = func_type_of_tag_type c.frame.inst (Tag.type_of tagt) in
+      let ctxt' code = compose (ctxt code) (vs', es') in
+      href := None;
+      [Ref (ContRef (ref (Some (Int32.add (Lib.List32.length ts) 1l, ctxt'))))] @ vs1 @ vs,
+      [Plain (Br (List.assq tagt hs)) @@ e.at]
+
+    | Handle (None, (Some (_, hs) as hso), (vs', {it = Suspending (tagt, vs1, Some (ContRef ({contents = Some (_, ctxt)} as cont)), None, ctxt'); at} :: es')), vs
        when List.memq tagt hs ->
        let FuncT (_, ts) = func_type_of_tag_type c.frame.inst (Tag.type_of tagt) in
        let ctxt'' code = compose (ctxt' code) (vs', es') in
        let cont' = Ref (ContRef (ref (Some (Int32.add (Lib.List32.length ts) 1l, ctxt'')))) in
        let args = cont' :: vs1 in
        cont := None;
-       vs' @ vs, [Handle (hso, ctxt (args, [])) @@ e.at]
+       vs' @ vs, [Handle (None, hso, ctxt (args, [])) @@ e.at]
 
-    | Handle (hso, (vs', {it = Suspending (tagt, vs1, contref, ctxt); at} :: es')), vs ->
-      let ctxt' code = [], [Handle (hso, compose (ctxt code) (vs', es')) @@ e.at] in
-      vs, [Suspending (tagt, vs1, contref, ctxt') @@ at]
+    | Handle (name, hso, (vs', {it = Suspending (tagt, vs1, contref, href, ctxt); at} :: es')), vs ->
+      let ctxt' code = [], [Handle (name, hso, compose (ctxt code) (vs', es')) @@ e.at] in
+      vs, [Suspending (tagt, vs1, contref, href, ctxt') @@ at]
 
-    | Handle (hso, (vs', e' :: es')), vs when is_jumping e' ->
+    | Handle (name, hso, (vs', e' :: es')), vs when is_jumping e' ->
       vs, [e']
 
-    | Handle (hso, code'), vs ->
+    | Handle (name, hso, code'), vs ->
       let c' = step {c with code = code'} in
-      vs, [Handle (hso, c'.code) @@ e.at]
+      vs, [Handle (name, hso, c'.code) @@ e.at]
 
-    | Suspending (_, _, _, _), _ -> assert false
+    | Suspending (_, _, _, _, _), _ -> assert false
 
   in {c with code = vs', es' @ List.tl es}
 
