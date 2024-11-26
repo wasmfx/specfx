@@ -591,12 +591,12 @@ instr_list :
   | instr1 instr_list { fun c -> $1 c @ $2 c }
   | select_instr_instr_list { $1 }
   | call_instr_instr_list { $1 }
-  | resume_instr_instr { fun c -> let e, es = $1 c in e :: es }
 
 instr1 :
   | plain_instr { fun c -> [$1 c @@ $sloc] }
   | block_instr { fun c -> [$1 c @@ $sloc] }
   | expr { $1 }  /* Sugar */
+  | resume_instr_instr { fun c -> let e, es = $1 c in e :: es }
 
 plain_instr :
   | UNREACHABLE { fun c -> unreachable }
