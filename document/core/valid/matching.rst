@@ -502,7 +502,9 @@ Limits
 Table Types
 ~~~~~~~~~~~
 
-A :ref:`table type <syntax-tabletype>` :math:`(\limits_1~\reftype_1)` matches :math:`(\limits_2~\reftype_2)` if and only if:
+A :ref:`table type <syntax-tabletype>` :math:`(\addrtype_1~\limits_1~\reftype_1)` matches :math:`(\addrtype_2~\limits_2~\reftype_2)` if and only if:
+
+* Address types :math:`\addrtype_1` and :math:`\addrtype_2` are the same.
 
 * Limits :math:`\limits_1` :ref:`match <match-limits>` :math:`\limits_2`.
 
@@ -517,7 +519,7 @@ A :ref:`table type <syntax-tabletype>` :math:`(\limits_1~\reftype_1)` matches :m
      \qquad
      C \vdashreftypematch \reftype_2 \matchesreftype \reftype_1
    }{
-     C \vdashtabletypematch \limits_1~\reftype_1 \matchestabletype \limits_2~\reftype_2
+     C \vdashtabletypematch \addrtype~\limits_1~\reftype_1 \matchestabletype \addrtype~\limits_2~\reftype_2
    }
 
 
@@ -527,7 +529,9 @@ A :ref:`table type <syntax-tabletype>` :math:`(\limits_1~\reftype_1)` matches :m
 Memory Types
 ~~~~~~~~~~~~
 
-A :ref:`memory type <syntax-memtype>` :math:`\limits_1` matches :math:`\limits_2` if and only if:
+A :ref:`memory type <syntax-memtype>` :math:`(\addrtype_1~\limits_1)` matches :math:`(\addrtype_2~\limits_2)` if and only if:
+
+* Address types :math:`\addrtype_1` and :math:`\addrtype_2` are the same.
 
 * Limits :math:`\limits_1` :ref:`match <match-limits>` :math:`\limits_2`.
 
@@ -537,7 +541,7 @@ A :ref:`memory type <syntax-memtype>` :math:`\limits_1` matches :math:`\limits_2
    \frac{
      C \vdashlimitsmatch \limits_1 \matcheslimits \limits_2
    }{
-     C \vdashmemtypematch \limits_1 \matchesmemtype \limits_2
+     C \vdashmemtypematch \addrtype~\limits_1 \matchesmemtype \addrtype~\limits_2
    }
 
 

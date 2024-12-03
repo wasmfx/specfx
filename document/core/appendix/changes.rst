@@ -308,7 +308,7 @@ Allowed basic numeric computations in constant expressions. [#proposal-extconst]
   - |GLOBALGET| for any previously declared immutable :ref:`global <syntax-global>`
 
 .. note::
-   The :ref:`garbage collection <extension-gc>` added further constant instructions.
+   The :ref:`garbage collection <extension-gc>` extension added further constant instructions.
 
 
 .. index:: instruction, function, call
@@ -387,6 +387,44 @@ Added the ability to use multiple memories per module. [#proposal-multimem]_
   - :math:`\K{v128.store}\!N\!\K{\_lane}`
 
 * :ref:`Data segments <syntax-elem>` take a :ref:`memory index <syntax-memidx>`
+
+
+.. index:: address type, number type, table, memory, instruction
+
+64-bit Address Space
+....................
+
+Added the ability to declare an :math:`\I64` :ref:`address type <syntax-addrtype>` for :ref:`tables <syntax-tabletype>` and :ref:`memories <syntax-memtype>`. [#proposal-addr64]_
+
+* :ref:`Address types <syntax-addrtype>` denote a subset of the integral :ref:`number types <syntax-numtype>`
+
+* :ref:`Table types <syntax-tabletype>` include an :ref:`address type <syntax-addrtype>`
+
+* :ref:`Memory types <syntax-memtype>` include an :ref:`address type <syntax-addrtype>`
+
+* Operand types of :ref:`table <syntax-instr-table>` and :ref:`memory <syntax-instr-memory>` instructions now depend on the subject's declared address type:
+
+  - |TABLEGET|
+  - |TABLESET|
+  - |TABLESIZE|
+  - |TABLEGROW|
+  - |TABLEFILL|
+  - |TABLECOPY|
+  - |TABLEINIT|
+  - |MEMORYSIZE|
+  - |MEMORYGROW|
+  - |MEMORYFILL|
+  - |MEMORYCOPY|
+  - |MEMORYINIT|
+  - :math:`t\K{.load}`
+  - :math:`t\K{.store}`
+  - :math:`t\K{.load}\!N\!\K{\_}\sx`
+  - :math:`t\K{.store}\!N`
+  - :math:`\K{v128.load}\!N\!\K{x}\!M\!\K{\_}\sx`
+  - :math:`\K{v128.load}\!N\!\K{\_zero}`
+  - :math:`\K{v128.load}\!N\!\K{\_splat}`
+  - :math:`\K{v128.load}\!N\!\K{\_lane}`
+  - :math:`\K{v128.store}\!N\!\K{\_lane}`
 
 
 .. index:: reference, reference type, heap type, value type, local, local type, instruction, instruction type, table, function, function type, matching, subtyping
@@ -584,7 +622,7 @@ mirroring the role of custom sections in the binary format. [#proposal-annot]_
 
 
 .. [#proposal-extconst]
-   https://github.com/WebAssembly/spec/blob/main/proposals/extended-const/
+   https://github.com/WebAssembly/spec/tree/main/proposals/extended-const/
 
 .. [#proposal-tailcall]
    https://github.com/WebAssembly/spec/tree/main/proposals/tail-call/
@@ -593,7 +631,10 @@ mirroring the role of custom sections in the binary format. [#proposal-annot]_
    https://github.com/WebAssembly/spec/tree/main/proposals/exception-handling/
 
 .. [#proposal-multimem]
-   https://github.com/WebAssembly/spec/blob/main/proposals/multi-memory/
+   https://github.com/WebAssembly/spec/tree/main/proposals/multi-memory/
+
+.. [#proposal-addr64]
+   https://github.com/WebAssembly/spec/tree/main/proposals/memory64/
 
 .. [#proposal-typedref]
    https://github.com/WebAssembly/spec/tree/main/proposals/function-references/
