@@ -30,6 +30,7 @@ def Main():
       'Validation Algorithm',
       'Custom Sections',
       'Soundness',
+      'Type System Properties',
       'Change History',
       'Index of Types',
       'Index of Instructions',

@@ -61,7 +61,6 @@ struct
     if -64L <= i && i < 64L then byte b
     else (byte (b lor 0x80); s64 (Int64.shift_right i 7))
 
-  let u1 i = u64 Int64.(logand (of_int i) 1L)
   let u32 i = u64 Int64.(logand (of_int32 i) 0xffffffffL)
   let s7 i = s64 (Int64.of_int i)
   let s32 i = s64 (Int64.of_int32 i)
@@ -70,12 +69,13 @@ struct
   let f64 x = word64 (F64.to_bits x)
   let v128 v = String.iter (put s) (V128.to_bits v)
 
+  let flag b i = if b then 1 lsl i else 0
+
   let len i =
     if Int32.to_int (Int32.of_int i) <> i then
       Code.error Source.no_region "length out of bounds";
     u32 (Int32.of_int i)
 
-  let bool b = u1 (if b then 1 else 0)
   let string bs = len (String.length bs); put_string s bs
   let name n = string (Utf8.encode n)
   let list f xs = List.iter f xs
@@ -205,14 +205,15 @@ struct
     | RecT [st] -> sub_type st
     | RecT sts -> s7 (-0x32); vec sub_type sts
 
-  let limits uN {min; max} =
-    bool (max <> None); uN min; opt uN max
+  let limits at {min; max} =
+    let flags = flag (max <> None) 0 + flag (at = I64AT) 2 in
+    byte flags; u64 min; opt u64 max
 
   let table_type = function
-    | TableT (lim, t) -> ref_type t; limits u32 lim
+    | TableT (at, lim, t) -> ref_type t; limits at lim
 
   let memory_type = function
-    | MemoryT lim -> limits u32 lim
+    | MemoryT (at, lim) -> limits at lim
 
   let global_type = function
     | GlobalT (mut, t) -> val_type t; mutability mut
@@ -238,7 +239,7 @@ struct
       Int32.(logor (of_int align) (if has_var then 0x40l else 0x00l)) in
     u32 flags;
     if has_var then var x;
-    u32 offset
+    u64 offset
 
   let block_type = function
     | VarBlockType x -> var_type s33 (StatX x.it)
@@ -974,7 +975,7 @@ struct
     | TableImport t -> byte 0x01; table_type t
     | MemoryImport t -> byte 0x02; memory_type t
     | GlobalImport t -> byte 0x03; global_type t
-    | TagImport t -> byte 0x04; var t
+    | TagImport t -> byte 0x04; tag_type t
 
   let import im =
     let {module_name; item_name; idesc} = im.it in
@@ -997,7 +998,7 @@ struct
   let table tab =
     let {ttype; tinit} = tab.it in
     match ttype, tinit.it with
-    | TableT (_, (_, ht1)), [{it = RefNull ht2; _}] when ht1 = ht2 ->
+    | TableT (_, _at, (_, ht1)), [{it = RefNull ht2; _}] when ht1 = ht2 ->
       table_type ttype
     | _ -> op 0x40; op 0x00; table_type ttype; const tinit
 
@@ -1025,8 +1026,8 @@ struct
     section 6 (vec global) gs (gs <> [])
 
   (* Tag section *)
-  let tag tag =
-    tag_type tag.it.tgtype
+  let tag (t : tag) =
+    byte 0x00; var t.it.tgtype
 
   let tag_section ts =
     section 13 (vec tag) ts (ts <> [])
