@@ -436,7 +436,7 @@ let rec step (c : config) : config =
           Ref (HandlerRef (ref (Some Name)))
         in
         cont := None;
-        vs', [Prompt (Some Name, hs, ctxt (args @ [name], [])) @@ e.at]
+        vs', [Prompt (Some Name, hs, ctxt (name :: args, [])) @@ e.at]
 
       | Switch (x, y), Ref (NullRef _) :: vs ->
          vs, [Trapping "null continuation reference" @@ e.at]
