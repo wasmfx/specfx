@@ -24,16 +24,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 16
-      - name: Setup Bikeshed
-        run: pip install bikeshed && bikeshed update
+      # - name: Setup Bikeshed
+      #   run: pip install bikeshed && bikeshed update
       - name: Setup TexLive
         run: sudo apt-get update -y && sudo apt-get install -y latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
       - name: Setup Sphinx
         run: pip install six && pip install sphinx==5.1.0
       - name: Build main spec
         run: cd document/core && make main
-      - name: Run Bikeshed
-        run: cd document/core && make bikeshed
+      # - name: Run Bikeshed
+      #   run: cd document/core && make bikeshed
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -41,6 +41,7 @@ jobs:
           path: document/core/_build/html
 
   build-js-api-spec:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -56,6 +57,7 @@ jobs:
           path: document/js-api/index.html
 
   build-web-api-spec:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -71,11 +73,12 @@ jobs:
           path: document/web-api/index.html
 
   build-code-metadata-spec:
+    if: false
     runs-on: ubuntu-latest
     needs: [build-core-spec]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
       - name: Setup TexLive
@@ -91,10 +94,11 @@ jobs:
           path: document/metadata/code/_build/html
 
   build-legacy-exceptions-core-spec:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
       - name: Setup TexLive
@@ -110,6 +114,7 @@ jobs:
           path: document/legacy/exceptions/core/_build/html
 
   build-legacy-exceptions-js-api-spec:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -125,6 +130,7 @@ jobs:
           path: document/legacy/exceptions/js-api/index.html
 
   build-spec-versions:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -136,6 +142,7 @@ jobs:
           path: document/versions/
 
   publish-spec:
+    if: false
     runs-on: ubuntu-latest
     needs:
       - build-core-spec
