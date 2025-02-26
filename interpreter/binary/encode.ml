@@ -132,7 +132,7 @@ struct
     | NoExternHT -> s7 (-0x0e)
     | ContHT -> s7 (-0x18)
     | NoContHT -> s7 (-0x0b)
-    | HandlerHT -> s7 (-0x19)
+    | HandlerHT -> s7 (-0x1e)
     | NoHandlerHT -> s7 (-0x1a)
     | VarHT x -> var_type s33 x
     | DefHT _ | BotHT -> assert false

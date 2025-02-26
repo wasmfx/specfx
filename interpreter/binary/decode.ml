@@ -193,7 +193,7 @@ let heap_type s =
       | -0x16 -> ArrayHT
       | -0x17 -> ExnHT
       | -0x18 -> ContHT
-      | -0x19 -> HandlerHT
+      | -0x1e -> HandlerHT
       | -0x1a -> NoHandlerHT
       | _ -> error s pos "malformed heap type"
     )
